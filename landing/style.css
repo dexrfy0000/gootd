@@ -206,6 +206,13 @@ body { overflow-x: hidden; }
 }
 .who:hover { color: var(--ink); }
 
+.links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+
 /* ── responsive ─────────────────────────────────────────────────────── */
 
 @media (max-width: 520px) {
