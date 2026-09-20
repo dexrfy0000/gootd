@@ -1,0 +1,16 @@
+# Binaries and build output (app/build/ holds the local .app and .dmg)
+app/build/
+app/.build/
+
+# macOS
+.DS_Store
+
+# Unused landing assets (kept locally, not shipped)
+landing/FA.png
+landing/FB.png
+landing/FC.png
+landing/FD.png
+landing/G1.png
+landing/G2.png
+landing/M1.png
+landing/M2.png

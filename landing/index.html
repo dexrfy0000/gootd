@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gootd &middot; turn off screen and keyboard light with one hotkey</title>
+<meta name="description" content="Set your hotkey and your Mac's display and keyboard backlight cut out immediately. Nothing sleeps.">
+<meta name="theme-color" content="#000000">
+<meta property="og:title" content="Gootd &middot; turn off screen and keyboard light with one hotkey">
+<meta property="og:description" content="Set your hotkey and your Mac's display and keyboard backlight cut out immediately. Nothing sleeps.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:creator" content="@AlexEloira">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/Plein-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Plein-500.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css?v=18">
+</head>
+<body>
+
+<!-- Dust and grain. Both decorative, both behind everything, and neither is a
+     light source. If the canvas never runs the page is a black field with
+     every word still on it. -->
+<canvas class="dust" id="dust" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="stage" id="stage">
+
+  <p class="mark">Gootd</p>
+
+  <main class="core">
+    <h1 class="say">Lights&nbsp;out.<br>One&nbsp;hotkey.</h1>
+
+    <p class="lede">Set your hotkey and the display and keyboard backlight cut
+      out immediately &mdash; agents keep working. Press it again and
+      everything is back where you left it.</p>
+
+    <div class="cmd">
+      <code class="cmd-line"><span class="sign" aria-hidden="true">$</span><span id="cmd-text">brew install --cask dexrfy0000/gootd/gootd && xattr -cr /Applications/Gootd.app</span></code>
+      <button class="copy" id="copy" type="button">
+        <span class="copy-w" aria-hidden="true">Copied</span>
+        <span class="copy-l" id="copy-l" aria-live="polite">Copy</span>
+      </button>
+    </div>
+
+    <p class="meta">Runs on any Apple&nbsp;silicon Mac with macOS&nbsp;13 or newer,
+      and it&rsquo;s free. Bind the hotkey to whatever you like.</p>
+  </main>
+
+  <a class="who" href="https://x.com/AlexEloira" target="_blank" rel="me noopener">@AlexEloira</a>
+</div>
+
+<script src="script.js?v=18" defer></script>
+</body>
+</html>
