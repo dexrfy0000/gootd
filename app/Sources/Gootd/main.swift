@@ -9,6 +9,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         HotKeyCenter.shared.onFire = { DarkEngine.shared.toggle() }
         HotKeyCenter.shared.start()
 
+        // Debug runs only: a scriptable stand-in for the hotkey, so the dark
+        // logic can be driven end to end on real hardware.
+        if ProcessInfo.processInfo.environment["GOOTD_DEBUG"] != nil {
+            DistributedNotificationCenter.default().addObserver(
+                forName: .init("gootd.toggle"), object: nil, queue: .main
+            ) { _ in DarkEngine.shared.toggle() }
+        }
+
         // Idle display sleep brings the backlight back at its old level on
         // wake; while dark, the engine puts it straight back out.
         NSWorkspace.shared.notificationCenter.addObserver(

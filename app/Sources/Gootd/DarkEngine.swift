@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import CoreGraphics
 
 /// The whole product, in one object: kill the two lights, bring them back.
@@ -100,29 +101,47 @@ final class DarkEngine: ObservableObject {
 
     // MARK: - Holding the dark
 
-    /// Dark stays dark until the hotkey says otherwise. macOS keeps trying to
-    /// bring the lights back on its own - auto-brightness nudging the panel up
-    /// from the ambient sensor, keyboard auto-illumination relighting the keys,
-    /// the display coming back from idle sleep with its old level - and each of
-    /// those used to read as "the user took over", which quietly undid the dark
-    /// a few minutes in. So while dark, anything that rises is pushed straight
-    /// back to zero. The only ways out are the hotkey and quitting.
+    /// Dark stays dark until YOU bring it back. macOS keeps trying to relight
+    /// things on its own - auto-brightness creeping the panel up from the
+    /// ambient sensor, keyboard auto-illumination, the display returning from
+    /// idle sleep at its old level - and those are pushed straight back to
+    /// zero. But the brightness keys are you, and fighting them made the screen
+    /// blink between their level and black. So a rise that looks like a key
+    /// press is handed over instead: adopt their level, leave the dark state,
+    /// and the next hotkey press goes dark again rather than "waking".
+    ///
+    /// Telling the two apart: a brightness key moves the panel a whole step
+    /// (1/16) at once, and we also see the key itself when macOS lets us.
+    /// Auto-brightness only creeps, and a display wake is flagged separately.
     private var watchTimer: Timer?
     private static let externalEpsilon: Float = 0.02
+    private static let keyStep: Float = 0.05
+    private var lastWake = Date.distantPast
+    private var lastBrightnessKey = Date.distantPast
+    private var keyMonitor: Any?
 
     private func startWatching() {
         stopWatching()
         guard isDark else { return }
-        let timer = Timer(timeInterval: 0.35, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
             self?.holdDark()
         }
         RunLoop.main.add(timer, forMode: .common)
         watchTimer = timer
+        // Brightness keys arrive as system-defined events (subtype 8, key 2 up
+        // / 3 down). If macOS withholds them, the step heuristic still works.
+        keyMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) { [weak self] event in
+            guard event.subtype.rawValue == 8 else { return }
+            let key = (event.data1 & 0xFFFF0000) >> 16
+            if key == 2 || key == 3 { self?.lastBrightnessKey = Date() }
+        }
     }
 
     private func stopWatching() {
         watchTimer?.invalidate()
         watchTimer = nil
+        if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
+        keyMonitor = nil
     }
 
     private func holdDark() {
@@ -131,10 +150,28 @@ final class DarkEngine: ObservableObject {
             Log.say("keyboard backlight rose to \(keyboard) while dark; holding it at zero")
             Backlight.set(0)
         }
-        if Panel.highest() > Self.externalEpsilon {
-            Log.say("panel rose while dark; holding it at zero")
+        let panel = Panel.highest()
+        guard panel > Self.externalEpsilon else { return }
+
+        let keyPressed = Date().timeIntervalSince(lastBrightnessKey) < 1
+        let justWoke = Date().timeIntervalSince(lastWake) < 4
+        if keyPressed || (panel >= Self.keyStep && !justWoke) {
+            Log.say("brightness keys while dark (panel \(panel)); handing the lights back")
+            handOver()
+        } else {
+            Log.say("panel crept to \(panel) while dark; holding it at zero")
             Panel.apply(restoreBrightness, scaledBy: 0)
         }
+    }
+
+    /// The user raised the brightness themselves: their level stands, the
+    /// keyboard comes back with it, and we are no longer dark.
+    private func handOver() {
+        stopWatching()
+        isDark = false
+        restoreBrightness = Panel.current()   // whatever they dialled to
+        drivesPanel = false                   // the panel is theirs for this ramp
+        ramp(to: 1)
     }
 
     /// Straight to a value with no ramp, for quitting: there is no time for a
@@ -155,6 +192,7 @@ final class DarkEngine: ObservableObject {
     func noteDisplayWokeExternally() {
         guard isDark else { return }
         Log.say("display woke while dark; re-applying dark")
+        lastWake = Date()
         holdDark()
     }
 
