@@ -98,16 +98,15 @@ final class DarkEngine: ObservableObject {
         Backlight.set(restoreLevel * Double(value))
     }
 
-    // MARK: - Somebody reached for the brightness keys
+    // MARK: - Holding the dark
 
-    /// Holding the panel at zero means the brightness keys still work: press
-    /// brightness-up while dark and the screen comes back, but nothing told us,
-    /// so we sat there still believing we were dark and still holding a
-    /// fraction of zero. The next press of the hotkey then slammed the panel
-    /// from what they had dialled in back down to black before ramping up - the
-    /// flicker. So watch the panel while dark, and the moment it rises under us,
-    /// hand it over: adopt their level, leave the dark state, and bring only the
-    /// keyboard back up so we are never fighting them for the same control.
+    /// Dark stays dark until the hotkey says otherwise. macOS keeps trying to
+    /// bring the lights back on its own - auto-brightness nudging the panel up
+    /// from the ambient sensor, keyboard auto-illumination relighting the keys,
+    /// the display coming back from idle sleep with its old level - and each of
+    /// those used to read as "the user took over", which quietly undid the dark
+    /// a few minutes in. So while dark, anything that rises is pushed straight
+    /// back to zero. The only ways out are the hotkey and quitting.
     private var watchTimer: Timer?
     private static let externalEpsilon: Float = 0.02
 
@@ -115,7 +114,7 @@ final class DarkEngine: ObservableObject {
         stopWatching()
         guard isDark else { return }
         let timer = Timer(timeInterval: 0.35, repeats: true) { [weak self] _ in
-            self?.checkForExternalChange()
+            self?.holdDark()
         }
         RunLoop.main.add(timer, forMode: .common)
         watchTimer = timer
@@ -126,23 +125,16 @@ final class DarkEngine: ObservableObject {
         watchTimer = nil
     }
 
-    private func checkForExternalChange() {
-        guard isDark else { stopWatching(); return }
-
-        // The keyboard keys are the cheap half: adopt whatever they set so that
-        // coming back does not yank the light off the level they just chose.
+    private func holdDark() {
+        guard isDark, rampTimer == nil else { return }
         if let keyboard = Backlight.level, keyboard > Double(Self.externalEpsilon) {
-            Log.say("keyboard backlight raised externally to \(keyboard); adopting it")
-            restoreLevel = keyboard
+            Log.say("keyboard backlight rose to \(keyboard) while dark; holding it at zero")
+            Backlight.set(0)
         }
-
-        guard Panel.highest() > Self.externalEpsilon else { return }
-        Log.say("brightness raised externally; handing the panel back")
-        stopWatching()
-        isDark = false
-        restoreBrightness = Panel.current()   // whatever they have dialled to
-        drivesPanel = false                   // the panel is theirs for this ramp
-        ramp(to: 1)
+        if Panel.highest() > Self.externalEpsilon {
+            Log.say("panel rose while dark; holding it at zero")
+            Panel.apply(restoreBrightness, scaledBy: 0)
+        }
     }
 
     /// Straight to a value with no ramp, for quitting: there is no time for a
@@ -157,15 +149,13 @@ final class DarkEngine: ObservableObject {
         set(fraction: 1)
     }
 
-    /// Called if the screen comes back any other way, so our state cannot
-    /// drift out of sync with the hardware. It must restore BOTH lights: the
-    /// panel is held at zero brightness rather than asleep, so bringing back
-    /// only the keyboard would leave a black screen with no way out.
+    /// The display woke from idle sleep (or the lock screen) while we were
+    /// dark. macOS brings the backlight back at its old level on the way up;
+    /// put it back out instead of treating the wake as a request for light.
     func noteDisplayWokeExternally() {
         guard isDark else { return }
-        Log.say("display woke externally")
-        stopWatching()
-        wake()
+        Log.say("display woke while dark; re-applying dark")
+        holdDark()
     }
 
     /// Design QA only: pose the UI in its dark state without touching hardware.

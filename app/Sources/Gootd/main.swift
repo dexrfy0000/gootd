@@ -9,8 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         HotKeyCenter.shared.onFire = { DarkEngine.shared.toggle() }
         HotKeyCenter.shared.start()
 
-        // If the screen comes back any other way - a keypress, the trackpad -
-        // our state would otherwise lie, and the backlight would stay at zero.
+        // Idle display sleep brings the backlight back at its old level on
+        // wake; while dark, the engine puts it straight back out.
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main
         ) { _ in DarkEngine.shared.noteDisplayWokeExternally() }
