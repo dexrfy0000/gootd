@@ -189,6 +189,27 @@ body { overflow-x: hidden; }
 .copy-w { visibility: hidden; grid-area: 1 / 1; }
 .copy-l { grid-area: 1 / 1; }
 
+/* The plain-download route, one sentence under the command. The link is the
+   ink value in a line of quiet grey: the tonal step is the whole affordance. */
+.alt {
+  margin: 14px 0 0;
+  max-width: 46ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--quiet);
+  text-wrap: balance;
+}
+.get {
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--line-2);
+  text-underline-offset: 3px;
+  transition: text-decoration-color .18s var(--ease);
+}
+.get:hover { text-decoration-color: var(--ink); }
+.size { white-space: nowrap; }
+
 .meta {
   margin: clamp(32px,4.8vh,50px) 0 0;
   max-width: 44ch;
@@ -247,6 +268,7 @@ body { overflow-x: hidden; }
   .lede { margin-top: 20px; font-size: 15.5px; line-height: 1.56; }
   .cmd { margin-top: 20px; min-height: 48px; }
   .meta { margin-top: 20px; }
+  .alt { margin-top: 12px; }
 }
 
 @media (max-height: 700px) {
@@ -257,6 +279,7 @@ body { overflow-x: hidden; }
   .cmd { margin-top: 18px; min-height: 44px; }
   .copy { height: 32px; }
   .meta { margin-top: 16px; font-size: 12px; }
+  .alt { margin-top: 10px; font-size: 12px; }
 }
 
 @media (max-height: 620px) {
@@ -266,6 +289,7 @@ body { overflow-x: hidden; }
   .cmd { margin-top: 16px; min-height: 40px; }
   .meta { margin-top: 16px; }
   .meta { font-size: 12px; }
+  .alt { margin-top: 8px; font-size: 12px; }
 }
 
 /* ── reduced motion ─────────────────────────────────────────────────── */
